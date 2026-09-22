@@ -207,10 +207,7 @@ function codeEmailHTML(heading, message, code) {
       <table role="presentation" width="440" cellpadding="0" cellspacing="0"
         style="background:#ffffff;border:1px solid #e6e9f0;border-radius:18px;overflow:hidden;">
         <tr><td style="padding:36px 40px 8px;" align="center">
-          <img src="https://timetracker-a2o.pages.dev/logo.png" width="60" height="60" alt="TimeTracker"
-            style="border-radius:15px;display:block;" />
-          <div style="color:#8a94ad;font-size:13px;font-weight:600;margin-top:10px;
-            letter-spacing:.5px;">TIMETRACKER</div>
+          <div style="color:#0b0f1b;font-size:20px;font-weight:800;letter-spacing:.5px;">TIMETRACKER</div>
         </td></tr>
         <tr><td style="padding:20px 40px 6px;" align="center">
           <div style="color:#0b0f1b;font-size:22px;font-weight:700;">${heading}</div>

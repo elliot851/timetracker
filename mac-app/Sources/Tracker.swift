@@ -11,14 +11,14 @@ final class Tracker {
     private var ticks = 0
 
     /// Length of one activity record. Override for testing:
-    /// `defaults write com.artush.timetracker captureInterval 10`
+    /// `defaults write com.westrosdigitalretail.timetracker captureInterval 10`
     private var interval: TimeInterval {
         let custom = UserDefaults.standard.double(forKey: "captureInterval")
         return custom > 0 ? custom : 60
     }
 
     /// Take a screenshot every N ticks (default 10 minutes). Override:
-    /// `defaults write com.artush.timetracker screenshotEveryMinutes 1`
+    /// `defaults write com.westrosdigitalretail.timetracker screenshotEveryMinutes 1`
     private var screenshotEvery: Int {
         let custom = UserDefaults.standard.integer(forKey: "screenshotEveryMinutes")
         return custom > 0 ? custom : 10

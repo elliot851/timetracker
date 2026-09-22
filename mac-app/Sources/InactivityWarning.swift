@@ -8,7 +8,7 @@ final class InactivityWarning {
     static let shared = InactivityWarning()
 
     /// Seconds of no input before the warning fires.
-    /// Override: `defaults write com.artush.timetracker inactivityThreshold 30`
+    /// Override: `defaults write com.westrosdigitalretail.timetracker inactivityThreshold 30`
     private var threshold: TimeInterval {
         let custom = UserDefaults.standard.double(forKey: "inactivityThreshold")
         return custom > 0 ? custom : 60
