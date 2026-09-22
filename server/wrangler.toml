@@ -1,0 +1,24 @@
+name = "timetracker-api"
+main = "worker.js"
+compatibility_date = "2024-09-01"
+
+# Verification/reset email sender via Brevo (single verified sender — no domain DNS).
+# BREVO_API_KEY is a secret: wrangler secret put BREVO_API_KEY
+# Set MAIL_FROM_EMAIL to the verified Gmail once it's confirmed in Brevo.
+[vars]
+MAIL_FROM_EMAIL = "timelytracker@outlook.com"
+MAIL_FROM_NAME = "TimeTracker"
+# ADMIN_EMAILS (comma-separated) is a secret so the public repo doesn't list addresses:
+#   npx wrangler secret put ADMIN_EMAILS
+# Those accounts are always admins (synced on every request); everyone else is a member.
+
+# The database already created in the dashboard (D1 > timetracker).
+[[d1_databases]]
+binding = "DB"
+database_name = "timetracker"
+database_id = "2adab846-fe3a-48ac-8b01-5c4eeb8ef500"
+
+# Screenshots bucket.
+[[r2_buckets]]
+binding = "SHOTS"
+bucket_name = "timetracker-shots"

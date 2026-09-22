@@ -1,0 +1,50 @@
+# Builds the desktop client for Windows, Linux and macOS.
+# - Push a tag like v1.0.0  → builds all three and attaches installers to a GitHub Release.
+# - "Run workflow" button   → builds and uploads artifacts without a release.
+name: Build desktop app
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            args: --win
+          - os: ubuntu-latest
+            args: --linux
+          - os: macos-latest
+            args: --mac
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: desktop-client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - name: Build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Unsigned builds; users click through SmartScreen / Gatekeeper.
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+        run: npx electron-builder ${{ matrix.args }} --publish ${{ startsWith(github.ref, 'refs/tags/') && 'always' || 'never' }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TimeTracker-${{ matrix.os }}
+          path: |
+            desktop/dist/*.exe
+            desktop/dist/*.AppImage
+            desktop/dist/*.deb
+            desktop/dist/*.dmg
+          if-no-files-found: ignore

@@ -1,0 +1,1283 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TimeTracker — Know where the hours go</title>
+<meta name="description" content="Automatic time tracking, screenshots and activity levels for your team. Install the app, clock in, and see the real workday.">
+<link rel="icon" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #05060c; --bg2: #080a13; --card: #10131f; --card2: #141828;
+    --border: rgba(255,255,255,.08); --border2: rgba(255,255,255,.14);
+    --accent: #4f7dff; --accent2: #8b5cf6; --danger: #f2555a; --success: #3fcf68; --warn: #f5a623;
+    --text: #eef1f8; --muted: #8b93ab; --muted2: #5d6478;
+    --grad: linear-gradient(135deg, #4f7dff, #8b5cf6);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: Inter, -apple-system, system-ui, sans-serif; font-size: 15px;
+    background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+  button, input, select { font: inherit; }
+  button { cursor: pointer; }
+  a { color: inherit; text-decoration: none; }
+  .hidden { display: none !important; }
+  ::selection { background: rgba(79,125,255,.35); }
+
+  /* ---------------- shared bits ---------------- */
+  .wrap { max-width: 1140px; margin: 0 auto; padding: 0 24px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+    padding: 13px 22px; border: none; border-radius: 12px; background: #fff; color: #06070d;
+    font-weight: 600; font-size: 15px; transition: transform .15s, opacity .15s, box-shadow .2s; }
+  .btn:hover { transform: translateY(-1px); }
+  .btn.grad { background: var(--grad); color: #fff; box-shadow: 0 10px 34px rgba(79,125,255,.35); }
+  .btn.grad:hover { box-shadow: 0 14px 40px rgba(79,125,255,.5); }
+  .btn.ghost { background: rgba(255,255,255,.06); color: var(--text); border: 1px solid var(--border2); }
+  .btn.big { padding: 17px 32px; font-size: 16.5px; border-radius: 14px; }
+  .btn.full { width: 100%; }
+  .btn.sm { padding: 8px 14px; font-size: 13px; border-radius: 9px; }
+  .btn[disabled] { opacity: .45; cursor: not-allowed; transform: none !important; }
+  .eyebrow { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 99px;
+    background: rgba(255,255,255,.05); border: 1px solid var(--border); color: var(--muted);
+    font-size: 12.5px; font-weight: 500; }
+  .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success);
+    box-shadow: 0 0 10px var(--success); }
+  .gradtext { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .pill { padding: 3px 10px; border-radius: 9px; font-size: 12px; font-weight: 600; display: inline-block; }
+  .pill.admin { background: rgba(139,92,246,.18); color: #b79bff; }
+  .pill.member { background: rgba(255,255,255,.07); color: var(--muted); }
+  .pill.ok { background: rgba(63,207,104,.14); color: var(--success); }
+  .pill.bad { background: rgba(242,85,90,.14); color: var(--danger); }
+  .pill.warn { background: rgba(245,166,35,.14); color: var(--warn); }
+
+  /* ---------------- marketing site ---------------- */
+  #site { display: none; }
+  #site.show { display: block; }
+
+  .nav { position: sticky; top: 0; z-index: 30; backdrop-filter: blur(14px);
+    background: rgba(5,6,12,.72); border-bottom: 1px solid var(--border); }
+  .nav .wrap { display: flex; align-items: center; gap: 30px; height: 68px; }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16.5px; }
+  .logo img { width: 30px; height: 30px; border-radius: 9px; }
+  .nav .links { display: flex; gap: 26px; margin-left: 12px; }
+  .nav .links a { color: var(--muted); font-size: 14.5px; font-weight: 500; }
+  .nav .links a:hover { color: var(--text); }
+  .nav .right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .nav .right .btn { padding: 9px 18px; font-size: 14px; border-radius: 10px; }
+  .navlink { background: none; border: none; color: var(--muted); font-weight: 500; font-size: 14.5px; padding: 9px 6px; }
+  .navlink:hover { color: var(--text); }
+
+  .hero { position: relative; overflow: hidden; padding: 96px 0 0; text-align: center; }
+  .hero::before { content: ""; position: absolute; top: -380px; left: 50%; transform: translateX(-50%);
+    width: 1100px; height: 700px; border-radius: 50%; pointer-events: none;
+    background: radial-gradient(closest-side, rgba(79,125,255,.28), rgba(139,92,246,.12) 55%, transparent); }
+  .hero::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+    background-image: linear-gradient(rgba(255,255,255,.028) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.028) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(circle at 50% 22%, #000 0%, transparent 70%);
+    -webkit-mask-image: radial-gradient(circle at 50% 22%, #000 0%, transparent 70%); }
+  .hero .wrap { position: relative; z-index: 1; }
+  .hero h1 { font-size: 66px; line-height: 1.04; letter-spacing: -2.4px; font-weight: 800; margin: 22px 0 20px; }
+  .hero p.lead { font-size: 19px; color: var(--muted); max-width: 620px; margin: 0 auto; line-height: 1.6; }
+  .hero .cta { display: flex; gap: 12px; justify-content: center; margin-top: 34px; flex-wrap: wrap; }
+  .hero .under { margin-top: 16px; color: var(--muted2); font-size: 13.5px; }
+  .hero .under b { color: var(--muted); font-weight: 500; }
+
+  .shot-frame { margin: 62px auto 0; max-width: 1000px; border-radius: 16px 16px 0 0;
+    border: 1px solid var(--border2); border-bottom: none; background: var(--bg2);
+    box-shadow: 0 -10px 90px rgba(79,125,255,.18), 0 40px 120px rgba(0,0,0,.7); overflow: hidden; }
+  .shot-frame .bar { height: 40px; display: flex; align-items: center; gap: 7px; padding: 0 15px;
+    border-bottom: 1px solid var(--border); background: rgba(255,255,255,.02); }
+  .shot-frame .bar i { width: 11px; height: 11px; border-radius: 50%; background: #2c3346; }
+  .shot-frame .bar .t { margin-left: 12px; color: var(--muted2); font-size: 12px; font-style: normal; }
+  .mock { display: grid; grid-template-columns: 180px 1fr; min-height: 380px; text-align: left; }
+  .mock .side { background: rgba(0,0,0,.28); border-right: 1px solid var(--border); padding: 16px 12px; }
+  .mock .side div { padding: 9px 11px; border-radius: 8px; color: var(--muted2); font-size: 13px; margin-bottom: 3px; }
+  .mock .side div.on { background: rgba(79,125,255,.16); color: var(--text); }
+  .mock .body { padding: 20px; }
+  .mock .kpis { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 16px; }
+  .mock .k { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 13px 14px; }
+  .mock .k small { color: var(--muted2); font-size: 10.5px; letter-spacing: .6px; text-transform: uppercase; }
+  .mock .k b { display: block; font-size: 22px; margin-top: 5px; letter-spacing: -.5px; }
+  .mock .tiles { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; }
+  .mock .tile { border-radius: 10px; overflow: hidden; border: 1px solid var(--border); background: var(--card); }
+  .mock .tile .img { height: 64px; background: linear-gradient(135deg,#18203a,#0d1120); }
+  .mock .tile .m { padding: 7px 9px; }
+  .mock .tile .m i { display: block; height: 4px; border-radius: 2px; background: rgba(255,255,255,.1); margin-top: 6px; }
+  .mock .tile .m i span { display: block; height: 100%; border-radius: 2px; }
+  .mock .tile .m small { font-size: 10px; color: var(--muted2); }
+
+  .strip { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    background: var(--bg2); padding: 26px 0; }
+  .strip .wrap { display: grid; grid-template-columns: repeat(4,1fr); gap: 20px; text-align: center; }
+  .strip b { display: block; font-size: 26px; letter-spacing: -1px; }
+  .strip small { color: var(--muted2); font-size: 12.5px; }
+
+  section { padding: 100px 0; }
+  .head { text-align: center; max-width: 660px; margin: 0 auto 54px; }
+  .head h2 { font-size: 42px; letter-spacing: -1.4px; font-weight: 700; margin: 16px 0 14px; line-height: 1.12; }
+  .head p { color: var(--muted); font-size: 17px; line-height: 1.6; }
+
+  .cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+  .feat { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px;
+    transition: border-color .2s, transform .2s, background .2s; }
+  .feat:hover { border-color: var(--border2); transform: translateY(-3px); background: var(--card2); }
+  .feat .ico { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center;
+    background: rgba(79,125,255,.14); font-size: 19px; margin-bottom: 15px; }
+  .feat h3 { font-size: 16.5px; margin-bottom: 8px; font-weight: 600; }
+  .feat p { color: var(--muted); font-size: 14px; line-height: 1.62; }
+
+  .steps { display: grid; grid-template-columns: repeat(3,1fr); gap: 34px; }
+  .step .n { width: 34px; height: 34px; border-radius: 10px; background: var(--grad); color: #fff;
+    display: grid; place-items: center; font-weight: 700; font-size: 15px; margin-bottom: 16px; }
+  .step h3 { font-size: 17px; margin-bottom: 8px; }
+  .step p { color: var(--muted); font-size: 14.5px; line-height: 1.62; }
+
+  .roles { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 900px; margin: 0 auto; }
+  .role { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 28px; }
+  .role h3 { font-size: 20px; margin: 12px 0 8px; }
+  .role p { color: var(--muted); font-size: 14.5px; line-height: 1.62; }
+  .role ul { margin: 14px 0 0 18px; color: var(--muted); font-size: 14px; line-height: 1.9; }
+
+  #download { background: var(--bg2); border-top: 1px solid var(--border); }
+  .plats { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; max-width: 900px; margin: 0 auto; }
+  .plat { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 28px 24px;
+    text-align: center; position: relative; transition: border-color .2s, transform .2s; }
+  .plat:hover { border-color: var(--border2); transform: translateY(-3px); }
+  .plat.rec { border-color: rgba(79,125,255,.5); box-shadow: 0 0 0 1px rgba(79,125,255,.18), 0 18px 60px rgba(79,125,255,.12); }
+  .plat .tag { position: absolute; top: -11px; left: 50%; transform: translateX(-50%); font-size: 11px;
+    font-weight: 700; letter-spacing: .5px; text-transform: uppercase; padding: 4px 12px; border-radius: 99px;
+    background: var(--grad); color: #fff; white-space: nowrap; }
+  .plat .tag.soon { background: rgba(255,255,255,.1); color: var(--muted); }
+  .plat svg { width: 42px; height: 42px; margin: 6px auto 14px; display: block; fill: var(--text); }
+  .plat h3 { font-size: 18px; margin-bottom: 5px; }
+  .plat .meta { color: var(--muted2); font-size: 12.5px; margin-bottom: 18px; }
+  .plat .note { color: var(--muted2); font-size: 12px; margin-top: 12px; line-height: 1.5; }
+
+  .cta-band { text-align: center; }
+  .cta-band .box { position: relative; overflow: hidden; border: 1px solid var(--border2); border-radius: 24px;
+    padding: 64px 30px; background: radial-gradient(120% 140% at 50% 0%, rgba(79,125,255,.22), transparent 62%), var(--card); }
+  .cta-band h2 { font-size: 40px; letter-spacing: -1.4px; margin-bottom: 14px; }
+  .cta-band p { color: var(--muted); font-size: 17px; margin-bottom: 30px; }
+
+  footer { border-top: 1px solid var(--border); padding: 40px 0; }
+  footer .wrap { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  footer .muted { color: var(--muted2); font-size: 13px; }
+  footer .fl { margin-left: auto; display: flex; gap: 22px; }
+  footer .fl a { color: var(--muted2); font-size: 13px; }
+  footer .fl a:hover { color: var(--text); }
+
+  /* ---------------- auth ---------------- */
+  #auth { display: none; min-height: 100vh; place-items: center; position: relative; padding: 40px 20px; }
+  #auth.show { display: grid; }
+  #auth::before { content: ""; position: absolute; top: -320px; left: 50%; transform: translateX(-50%);
+    width: 900px; height: 600px; border-radius: 50%; pointer-events: none;
+    background: radial-gradient(closest-side, rgba(79,125,255,.22), transparent); }
+  .auth-card { position: relative; width: 380px; max-width: 100%; text-align: center; }
+  .auth-card > img { width: 54px; height: 54px; border-radius: 15px; margin: 0 auto 20px; display: block; }
+  .auth-card h1 { font-size: 27px; letter-spacing: -.8px; margin-bottom: 8px; }
+  .auth-card .sub { color: var(--muted); font-size: 14.5px; margin-bottom: 26px; line-height: 1.55; }
+  .field { width: 100%; padding: 13px 15px; margin-bottom: 11px; border-radius: 11px;
+    border: 1px solid var(--border2); background: rgba(255,255,255,.035); color: var(--text); font-size: 15px;
+    transition: border-color .15s, background .15s; }
+  .field:focus { outline: none; border-color: rgba(79,125,255,.75); background: rgba(79,125,255,.07); }
+  .field::placeholder { color: var(--muted2); }
+  .otp { display: flex; gap: 9px; justify-content: center; margin-bottom: 14px; }
+  .otp input { width: 100%; max-width: 54px; height: 60px; text-align: center; font-size: 25px; font-weight: 700;
+    padding: 0; margin: 0; border-radius: 12px; border: 1px solid var(--border2);
+    background: rgba(255,255,255,.035); color: var(--text); font-family: 'SF Mono', Menlo, monospace; }
+  .otp input:focus { outline: none; border-color: rgba(79,125,255,.85); background: rgba(79,125,255,.08); }
+  .strength { font-size: 11.5px; color: var(--muted); margin: -4px 0 12px; text-align: left; min-height: 15px; }
+  .err { color: var(--danger); font-size: 13px; margin-bottom: 12px; min-height: 18px; line-height: 1.4; }
+  .link { background: none; border: none; color: var(--muted); font-size: 13.5px; padding: 6px; }
+  .link:hover { color: var(--text); }
+  .auth-card .links { margin-top: 16px; display: flex; flex-direction: column; gap: 2px; }
+  .eye { position: absolute; right: 12px; top: 11px; background: none; border: none; color: var(--muted); font-size: 16px; }
+  .auth-note { margin-top: 26px; padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,.035);
+    border: 1px solid var(--border); color: var(--muted); font-size: 12.5px; line-height: 1.5; }
+
+  /* ---------------- member gate ---------------- */
+  #gate { display: none; min-height: 100vh; place-items: center; padding: 40px 20px; text-align: center; }
+  #gate.show { display: grid; }
+  #gate .box { max-width: 520px; }
+  #gate h1 { font-size: 30px; letter-spacing: -1px; margin: 18px 0 10px; }
+  #gate p { color: var(--muted); line-height: 1.6; margin-bottom: 24px; }
+
+  /* ---------------- app shell ---------------- */
+  #app { display: none; grid-template-columns: 236px 1fr; min-height: 100vh; }
+  #app.show { display: grid; }
+  .sidebar { background: var(--bg2); border-right: 1px solid var(--border); padding: 20px 14px;
+    display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; }
+  .sidebar .logo { padding: 0 6px 24px; }
+  .nav-items button { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left;
+    padding: 10px 12px; border: none; background: none; color: var(--muted); border-radius: 9px;
+    font-size: 14px; font-weight: 500; margin-bottom: 3px; }
+  .nav-items button:hover { background: rgba(255,255,255,.04); color: var(--text); }
+  .nav-items button.active { background: rgba(79,125,255,.16); color: var(--text); }
+  .nav-items .ic { width: 18px; text-align: center; opacity: .85; }
+  .nav-items .badge { margin-left: auto; background: var(--danger); color: #fff; font-size: 11px;
+    font-weight: 700; border-radius: 9px; padding: 1px 7px; }
+  .profile { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px 6px 6px;
+    border-top: 1px solid var(--border); }
+  .av { width: 32px; height: 32px; border-radius: 50%; background: var(--grad);
+    display: grid; place-items: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+  .profile .nm { font-size: 13.5px; font-weight: 600; }
+  .profile small { display: block; color: var(--muted2); font-size: 12px; }
+
+  .main { display: flex; flex-direction: column; min-width: 0; }
+  .topbar { height: 62px; border-bottom: 1px solid var(--border); display: flex; align-items: center;
+    gap: 10px; padding: 0 24px; position: sticky; top: 0; background: rgba(5,6,12,.85);
+    backdrop-filter: blur(10px); z-index: 5; }
+  .topbar .title { font-weight: 600; font-size: 15px; margin-right: 10px; }
+  .ctl { background: var(--card); color: var(--text); border: 1px solid var(--border2);
+    border-radius: 9px; padding: 7px 12px; font-size: 13.5px; }
+  .ctl.active { background: rgba(79,125,255,.2); border-color: rgba(79,125,255,.5); }
+  .seg { display: inline-flex; background: var(--card); border: 1px solid var(--border2); border-radius: 9px; overflow: hidden; }
+  .seg button { background: none; border: none; color: var(--muted); padding: 7px 13px; font-size: 13px; font-weight: 500; }
+  .seg button.active { background: rgba(79,125,255,.22); color: var(--text); }
+  .content { padding: 24px; overflow: auto; }
+  h2.page { font-size: 21px; letter-spacing: -.5px; margin-bottom: 4px; }
+  .psub { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; }
+  .card h4 { font-size: 13px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 12px; }
+  .kpis { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 18px; }
+  .kpi .l { color: var(--muted2); font-size: 11px; text-transform: uppercase; letter-spacing: .6px; }
+  .kpi .v { font-size: 28px; font-weight: 700; letter-spacing: -1px; margin-top: 4px; }
+  .kpi .s { color: var(--muted2); font-size: 12px; margin-top: 2px; }
+  .two { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .three { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 12px; }
+
+  .members { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px,1fr)); gap: 14px; }
+  .member .top { display: flex; align-items: center; gap: 12px; margin-bottom: 13px; }
+  .member .av { width: 42px; height: 42px; font-size: 14px; }
+  .member .name { font-weight: 600; }
+  .member .status { font-size: 12px; font-weight: 600; }
+  .member img.shot { height: 152px; width: 100%; border-radius: 11px; background: #000;
+    object-fit: cover; margin-bottom: 13px; cursor: pointer; display: block; }
+  .member .noshot { height: 152px; border-radius: 11px; background: rgba(255,255,255,.035);
+    display: grid; place-items: center; color: var(--muted2); font-size: 12.5px; margin-bottom: 13px; }
+  .member .stats { display: flex; gap: 26px; margin-bottom: 13px; }
+  .member .stat .l { color: var(--muted2); font-size: 10.5px; text-transform: uppercase; letter-spacing: .5px; }
+  .member .stat .v { font-size: 21px; font-weight: 700; margin-top: 2px; }
+  .inspect { width: 100%; background: rgba(255,255,255,.05); border: 1px solid var(--border2);
+    color: var(--text); padding: 9px; border-radius: 9px; font-size: 13.5px; font-weight: 500; }
+  .inspect:hover { background: rgba(255,255,255,.09); }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px,1fr)); gap: 14px; }
+  .shot { border-radius: 12px; overflow: hidden; background: var(--card); border: 1px solid var(--border); }
+  .shot .im { position: relative; height: 128px; background: #000; cursor: pointer; }
+  .shot .im img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .shot .im .zoom { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(0,0,0,.35);
+    opacity: 0; transition: opacity .15s; font-size: 22px; }
+  .shot .im:hover .zoom { opacity: 1; }
+  .shot .im .none { height: 100%; display: grid; place-items: center; color: var(--muted2); font-size: 12px; }
+  .shot .meta { padding: 9px 11px; }
+  .shot .bar { height: 5px; border-radius: 3px; background: rgba(255,255,255,.1); margin: 7px 0; overflow: hidden; }
+  .shot .bar span { display: block; height: 100%; border-radius: 3px; }
+  .shot .app { color: var(--muted); font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hour-h { font-weight: 600; margin: 22px 0 11px; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+  .hour-h small { color: var(--muted2); font-weight: 400; }
+  .hour-h .hb { flex: 1; height: 4px; border-radius: 2px; background: rgba(255,255,255,.07); overflow: hidden; max-width: 160px; }
+  .hour-h .hb span { display: block; height: 100%; }
+
+  .warn-card { display: flex; gap: 14px; margin-bottom: 12px; align-items: stretch; }
+  .warn-card img { width: 190px; height: 112px; object-fit: cover; border-radius: 9px; background: #000; cursor: pointer; }
+  .stripe { width: 4px; border-radius: 2px; }
+
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; color: var(--muted2); font-size: 10.5px; text-transform: uppercase; letter-spacing: .6px; padding: 8px 10px; }
+  td { padding: 11px 10px; border-top: 1px solid var(--border); font-size: 13.5px; vertical-align: middle; }
+  tr.click { cursor: pointer; } tr.click:hover td { background: rgba(255,255,255,.025); }
+  .bars { display: flex; flex-direction: column; gap: 8px; }
+  .bars .r { display: grid; grid-template-columns: 140px 1fr 60px; align-items: center; gap: 10px; font-size: 13px; }
+  .bars .r .n { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bars .r .b { height: 8px; border-radius: 4px; background: rgba(255,255,255,.07); overflow: hidden; }
+  .bars .r .b span { display: block; height: 100%; background: var(--grad); border-radius: 4px; }
+  .bars .r .v { text-align: right; color: var(--muted); }
+  .legend { display: flex; gap: 14px; font-size: 12px; color: var(--muted); margin-top: 8px; flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; }
+  .empty { color: var(--muted2); font-size: 13px; padding: 20px 0; text-align: center; }
+  svg.chart text { fill: var(--muted2); font-size: 10px; font-family: Inter, sans-serif; }
+
+  /* ---------------- lightbox ---------------- */
+  #lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.92); display: none; z-index: 90;
+    grid-template-rows: 60px 1fr 70px; }
+  #lightbox.show { display: grid; }
+  #lightbox .lb-top { display: flex; align-items: center; gap: 14px; padding: 0 22px; color: var(--text); }
+  #lightbox .lb-top .info { font-size: 13.5px; color: var(--muted); }
+  #lightbox .lb-top b { color: var(--text); }
+  #lightbox .lb-mid { display: grid; place-items: center; position: relative; min-height: 0; }
+  #lightbox .lb-mid img { max-width: 92vw; max-height: calc(100vh - 150px); border-radius: 14px;
+    box-shadow: 0 30px 100px rgba(0,0,0,.8); }
+  #lightbox .arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 48px; height: 48px;
+    border-radius: 50%; border: none; background: rgba(255,255,255,.12); color: #fff; font-size: 20px; }
+  #lightbox .arrow:hover { background: rgba(255,255,255,.22); }
+  #lightbox .arrow.l { left: 22px; } #lightbox .arrow.r { right: 22px; }
+  #lightbox .close { margin-left: auto; background: rgba(255,255,255,.12); color: #fff; border: none;
+    width: 40px; height: 40px; border-radius: 50%; font-size: 16px; }
+  #lightbox .lb-bot { display: flex; align-items: center; justify-content: center; gap: 22px; color: var(--muted); font-size: 13px; }
+  #lightbox .lb-bot .act { display: flex; align-items: center; gap: 8px; }
+  #lightbox .lb-bot .act i { width: 90px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.12); overflow: hidden; display: inline-block; }
+  #lightbox .lb-bot .act i span { display: block; height: 100%; }
+
+  @media (max-width: 900px) {
+    .hero h1 { font-size: 42px; letter-spacing: -1.4px; }
+    .head h2, .cta-band h2 { font-size: 30px; }
+    .cards, .steps, .plats, .strip .wrap, .roles, .two, .three, .kpis { grid-template-columns: 1fr; }
+    .nav .links { display: none; }
+    #app { grid-template-columns: 1fr; }
+    .sidebar { flex-direction: row; align-items: center; gap: 10px; overflow-x: auto; height: auto; position: static; }
+    .nav-items { display: flex; gap: 6px; }
+    .profile { margin: 0; border: none; }
+    .mock { grid-template-columns: 1fr; } .mock .side { display: none; }
+    .topbar { flex-wrap: wrap; height: auto; padding: 10px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ MARKETING SITE ============ -->
+<div id="site">
+  <header class="nav">
+    <div class="wrap">
+      <a class="logo" href="#top"><img src="logo.png" alt=""><span>TimeTracker</span></a>
+      <nav class="links">
+        <a href="#features">Features</a>
+        <a href="#how">How it works</a>
+        <a href="#download">Download</a>
+      </nav>
+      <div class="right">
+        <button class="navlink" data-auth="login">Log in</button>
+        <button class="btn grad" data-auth="register">Get started</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="hero" id="top">
+    <div class="wrap">
+      <span class="eyebrow"><span class="dot"></span> Now available for macOS, Windows &amp; Linux</span>
+      <h1>Know where the<br><span class="gradtext">hours actually go.</span></h1>
+      <p class="lead">TimeTracker runs quietly on your team's computers. Clock in, and it captures
+        a screenshot every 10 minutes, real activity levels every minute and the apps in use — so the workday tells its own story.</p>
+      <div class="cta">
+        <button class="btn grad big" data-go="download">Download the app</button>
+        <button class="btn ghost big" data-auth="register">Create an account</button>
+      </div>
+      <div class="under">Free while in beta · <b>Already have an account?</b>
+        <button class="link" data-auth="login" style="font-size:13.5px;padding:0 2px;text-decoration:underline">Log in</button></div>
+
+      <div class="shot-frame">
+        <div class="bar"><i></i><i></i><i></i><span class="t">TimeTracker — Team</span></div>
+        <div class="mock">
+          <div class="side">
+            <div class="on">Dashboard</div><div>Activity</div><div>Analytics</div>
+            <div>Timesheets</div><div>Warnings</div><div>Members</div>
+          </div>
+          <div class="body">
+            <div class="kpis">
+              <div class="k"><small>Worked today</small><b>6h 12m</b></div>
+              <div class="k"><small>Activity</small><b style="color:var(--success)">74%</b></div>
+              <div class="k"><small>Screenshots</small><b>372</b></div>
+            </div>
+            <div class="tiles" id="mockTiles"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="strip">
+    <div class="wrap">
+      <div><b>Every 10 min</b><small>Screenshot cadence</small></div>
+      <div><b>Keyboard + mouse</b><small>Real activity signal</small></div>
+      <div><b>Apps &amp; sites</b><small>Automatically logged</small></div>
+      <div><b>Admin view</b><small>The whole team, one screen</small></div>
+    </div>
+  </div>
+
+  <section id="features">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Features</span>
+        <h2>Everything you need to see the real workday</h2>
+        <p>Built for agencies and remote teams who bill by the hour and want the receipts — without chasing anyone for a timesheet.</p>
+      </div>
+      <div class="cards">
+        <div class="feat"><div class="ico">📸</div><h3>Screenshots every 10 minutes</h3>
+          <p>A low-resolution, timestamped capture of the display you're actually working on. Light on bandwidth, stored safely in the cloud.</p></div>
+        <div class="feat"><div class="ico">⚡️</div><h3>Activity levels</h3>
+          <p>Keyboard and mouse activity per minute, tracked every minute and shown next to every screenshot — so idle time is obvious.</p></div>
+        <div class="feat"><div class="ico">🪟</div><h3>Apps &amp; websites</h3>
+          <p>See which app or site was in front for each tracked minute. No guessing where the afternoon went.</p></div>
+        <div class="feat"><div class="ico">🔔</div><h3>Idle warnings</h3>
+          <p>When activity hits zero, the app asks: keep working or clock out? The timer pauses until you answer, and admins get the alert.</p></div>
+        <div class="feat"><div class="ico">👥</div><h3>Team dashboard</h3>
+          <p>Admins see everyone — live status, hours, activity and the latest screenshot — without switching accounts.</p></div>
+        <div class="feat"><div class="ico">📊</div><h3>Analytics &amp; timesheets</h3>
+          <p>Daily and weekly trends, activity rings, top apps and per-person timesheets. Export-ready numbers for invoicing.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">How it works</span>
+        <h2>Three steps, about two minutes</h2>
+        <p>Each employee installs the app once and signs in. Everything after that is automatic.</p>
+      </div>
+      <div class="steps">
+        <div class="step"><div class="n">1</div><h3>Download &amp; install</h3>
+          <p>Pick your platform below and install the desktop app. It lives in your menu bar and stays out of the way.</p></div>
+        <div class="step"><div class="n">2</div><h3>Sign in and clock in</h3>
+          <p>Create an account with your work email, verify the code we send you, and hit Clock in when the day begins.</p></div>
+        <div class="step"><div class="n">3</div><h3>Watch it fill in</h3>
+          <p>Screenshots, activity and app usage sync to the web automatically. Admins open the dashboard from any browser.</p></div>
+      </div>
+
+      <div class="roles" style="margin-top:64px">
+        <div class="role">
+          <span class="pill member">Employees</span>
+          <h3>Track with the desktop app</h3>
+          <p>Time is tracked only in the app — that's where you clock in and out. Your own activity and hours are always visible to you there.</p>
+          <ul><li>Clock in / clock out</li><li>Activity every minute, a screenshot every 10</li><li>Idle warnings that pause the timer</li></ul>
+        </div>
+        <div class="role">
+          <span class="pill admin">Admins</span>
+          <h3>Monitor from the web</h3>
+          <p>The web dashboard is monitoring only: no clocking in here. Admins see every member's day, screenshots, analytics and warnings.</p>
+          <ul><li>Live team dashboard</li><li>Screenshot timeline per person</li><li>Analytics, timesheets &amp; warnings</li></ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="download">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Download</span>
+        <h2>Choose your platform</h2>
+        <p>Install the app on the computer you want to track. You'll need an account to sign in — creating one takes a minute.</p>
+      </div>
+      <div class="plats" id="platCards"></div>
+      <p style="text-align:center;color:var(--muted2);font-size:13px;margin-top:28px" id="notifyMsg"></p>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="wrap">
+      <div class="box">
+        <h2>Start tracking today</h2>
+        <p>Create your account, install the app, clock in. That's the whole setup.</p>
+        <div class="cta" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+          <button class="btn grad big" data-auth="register">Create an account</button>
+          <button class="btn ghost big" data-go="download">See downloads</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <a class="logo" href="#top"><img src="logo.png" alt=""><span>TimeTracker</span></a>
+      <span class="muted">© 2026 TimeTracker. Built by Creative Loop.</span>
+      <div class="fl">
+        <a href="#features">Features</a><a href="#download">Download</a>
+        <a href="#" data-auth="login">Log in</a>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- ============ AUTH ============ -->
+<div id="auth">
+  <div class="auth-card">
+    <img src="logo.png" alt="">
+    <h1 id="authTitle">Log in</h1>
+    <div class="sub" id="authSub">Welcome back. Sign in to your dashboard.</div>
+    <input id="email" class="field" type="email" placeholder="Work email" autocomplete="username">
+    <div id="pwWrap" style="position:relative">
+      <input id="password" class="field" type="password" placeholder="Password" autocomplete="current-password">
+      <button id="eye" class="eye" type="button" title="Show password">👁</button>
+    </div>
+    <div class="strength" id="strength"></div>
+    <div class="otp" id="otp" style="display:none">
+      <input maxlength="1" inputmode="numeric" autocomplete="one-time-code"><input maxlength="1" inputmode="numeric">
+      <input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric">
+      <input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric">
+    </div>
+    <div class="err" id="authError"></div>
+    <button class="btn grad full" id="authBtn">Log in</button>
+    <div class="links">
+      <button class="link" id="resendBtn" style="display:none">Send a new code</button>
+      <button class="link" id="forgotBtn">Forgot your password?</button>
+      <button class="link" id="toggleMode">Don't have an account? Create one</button>
+      <button class="link" id="backSite">← Back to site</button>
+    </div>
+    <div class="auth-note">The web dashboard is for <b>admins</b> — monitoring only. Time is tracked in the desktop app,
+      which is where employees clock in and out.</div>
+  </div>
+</div>
+
+<!-- ============ MEMBER GATE ============ -->
+<div id="gate">
+  <div class="box">
+    <img src="logo.png" alt="" style="width:64px;height:64px;border-radius:18px">
+    <h1>Hi <span id="gateName"></span> — track time in the app</h1>
+    <p>Your account is a <b>member</b> account. The web dashboard is monitoring-only and reserved for admins.
+      Clocking in, screenshots and your own activity all live in the desktop app.</p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <a class="btn grad" href="TimeTracker.zip" download>Download for Mac</a>
+      <button class="btn ghost" id="gateSite">Back to site</button>
+      <button class="btn ghost" id="gateLogout">Log out</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP (ADMIN DASHBOARD) ============ -->
+<div id="app">
+  <aside class="sidebar">
+    <div class="logo"><img src="logo.png" alt=""><span>TimeTracker</span></div>
+    <nav class="nav-items" id="navItems"></nav>
+    <div class="profile">
+      <div class="av" id="pAv">—</div>
+      <div><div class="nm" id="pName">—</div><small id="pRole">—</small></div>
+    </div>
+    <button class="link" id="logoutBtn" style="text-align:left;padding:8px 6px">Log out</button>
+  </aside>
+  <div class="main">
+    <div class="topbar" id="topbar"></div>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+
+<div id="lightbox">
+  <div class="lb-top">
+    <span class="info" id="lbInfo"></span>
+    <button class="close" id="lbClose">✕</button>
+  </div>
+  <div class="lb-mid">
+    <button class="arrow l" id="lbPrev">‹</button>
+    <img alt="" id="lbImg">
+    <button class="arrow r" id="lbNext">›</button>
+  </div>
+  <div class="lb-bot" id="lbBot"></div>
+</div>
+
+<script>
+const API = "https://timetracker-api.elliot-897.workers.dev";
+// Storage can be blocked (private mode, data: previews) — never let that kill the page.
+const store = {
+  get(k){ try { return localStorage.getItem(k); } catch { return null; } },
+  set(k,v){ try { localStorage.setItem(k,v); } catch {} },
+  del(k){ try { localStorage.removeItem(k); } catch {} },
+};
+const state = {
+  token: store.get("tt_token") || null,
+  user: JSON.parse(store.get("tt_user") || "null"),
+  users: [], viewing: "all", page: "dashboard", date: new Date(), period: 7, mode: "login",
+};
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* ---------- view switching ---------- */
+function show(view) {
+  ["site","auth","gate","app"].forEach(v => $(v).classList.toggle("show", v === view));
+  window.scrollTo(0, 0);
+}
+
+/* ---------- landing ---------- */
+(function mockTiles(){
+  const vals = [88, 61, 34, 76];
+  $("mockTiles").innerHTML = vals.map((v,i)=>`
+    <div class="tile"><div class="img"></div><div class="m">
+      <small>09:${String(i*15).padStart(2,"0")}</small>
+      <i><span style="width:${v}%;background:${actColor(v)}"></span></i>
+    </div></div>`).join("");
+})();
+
+// Set to "owner/repo" once the GitHub repo exists: Windows & Linux builds are published
+// there by .github/workflows/build.yml and the cards below turn into real downloads.
+const GITHUB_REPO = "elliot851/timetracker";
+const REL = (file) => GITHUB_REPO ? `https://github.com/${GITHUB_REPO}/releases/latest/download/${file}` : null;
+const PLATFORMS = [
+  { id:"mac", name:"macOS", meta:"Apple Silicon & Intel · 1.8 MB", live:true, href:"TimeTracker.zip",
+    note:"First launch: right-click the app → <b>Open</b> to allow an app from outside the App Store.",
+    svg:`<path d="M16.365 1.43c0 1.14-.47 2.22-1.23 3.01-.82.86-2.16 1.52-3.28 1.43-.13-1.1.42-2.25 1.17-3 .83-.85 2.25-1.47 3.34-1.44zM20.6 17.09c-.55 1.27-.82 1.84-1.53 2.96-.99 1.56-2.39 3.5-4.12 3.51-1.54.01-1.94-1-4.03-.99-2.09.01-2.53 1.01-4.07.99-1.73-.02-3.05-1.77-4.04-3.33C.03 15.86-.25 10.75 1.45 8.03c1.21-1.93 3.12-3.06 4.92-3.06 1.83 0 2.98 1.01 4.49 1.01 1.47 0 2.36-1.01 4.48-1.01 1.6 0 3.3.87 4.51 2.38-3.96 2.17-3.32 7.83 1.25 9.74z"/>` },
+  { id:"win", name:"Windows", meta:"Windows 10 & 11 · 64-bit installer", live:!!GITHUB_REPO, href:REL("TimeTracker-Setup.exe"),
+    note: GITHUB_REPO ? "SmartScreen may warn on first run: click <b>More info → Run anyway</b>. Portable version: <a href='" + REL("TimeTracker-Portable.exe") + "' style='text-decoration:underline'>TimeTracker-Portable.exe</a>."
+                      : "The Windows client is being built now — same tracking, same dashboard.",
+    svg:`<path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/>` },
+  { id:"linux", name:"Linux", meta:".AppImage & .deb · x86_64", live:!!GITHUB_REPO, href:REL("TimeTracker.AppImage"),
+    note: GITHUB_REPO ? "Make it executable (<code>chmod +x</code>) and run. Debian/Ubuntu: <a href='" + REL("TimeTracker.deb") + "' style='text-decoration:underline'>TimeTracker.deb</a>. Needs <code>xdotool</code> for app tracking."
+                      : "Ubuntu, Debian and Fedora builds are on the roadmap.",
+    svg:`<path d="M12.504 0c-.155 0-.315.008-.48.021-4.226.333-3.105 4.807-3.17 6.298-.076 1.092-.3 1.953-1.05 3.02-.885 1.051-2.127 2.75-2.716 4.521-.278.832-.41 1.684-.287 2.489a.424.424 0 00-.11.135c-.26.268-.45.6-.663.839-.199.199-.485.267-.797.4-.313.136-.658.269-.864.68-.09.189-.136.394-.132.602 0 .199.027.4.055.6.058.399.116.802-.021 1.03-.44.7-.477 1.125-.218 1.433.26.31.751.325 1.375.28.624-.045 1.4-.13 2.28.135.882.265 1.66.79 2.474.79.817 0 1.6-.51 2.48-.79.878-.28 1.653-.18 2.277-.135.624.045 1.114.03 1.374-.28.26-.308.222-.734-.218-1.433-.137-.228-.08-.63-.021-1.03.028-.2.055-.401.055-.6.004-.208-.042-.413-.132-.602-.206-.411-.55-.544-.864-.68-.312-.133-.598-.201-.797-.4-.213-.239-.402-.571-.663-.839a.424.424 0 00-.11-.135c.123-.805-.009-1.657-.287-2.489-.589-1.771-1.831-3.47-2.716-4.521-.75-1.067-.974-1.928-1.05-3.02-.065-1.491 1.056-5.965-3.17-6.298A5.86 5.86 0 0012.504 0z"/>` },
+];
+function detectPlatform(){
+  const p = navigator.platform + " " + navigator.userAgent;
+  return /Win/i.test(p) ? "win" : (/Linux|X11/i.test(p) && !/Android/i.test(p)) ? "linux" : "mac";
+}
+function platformCards(compact) {
+  const mine = detectPlatform();
+  return PLATFORMS.map(p => `
+    <div class="plat ${p.id===mine ? "rec" : ""}">
+      <span class="tag ${p.live ? "" : "soon"}">${p.live ? (p.id===mine ? "Recommended for you" : "Available now") : "In development"}</span>
+      ${compact ? "" : `<svg viewBox="0 0 24 24">${p.svg}</svg>`}
+      <h3 ${compact ? 'style="margin-top:14px"' : ""}>${p.name}</h3>
+      <div class="meta">${p.meta}</div>
+      ${p.live ? `<a class="btn grad full" href="${p.href}" ${p.href.startsWith("http") ? "" : "download"}>Download for ${p.name}</a>`
+               : `<button class="btn ghost full" data-notify="${p.name}">Notify me when it's ready</button>`}
+      <div class="note">${p.note}</div>
+    </div>`).join("");
+}
+$("platCards").innerHTML = platformCards(false);
+
+document.querySelectorAll("[data-go]").forEach(b => b.onclick = () => {
+  show("site"); document.getElementById(b.dataset.go).scrollIntoView({behavior:"smooth"});
+});
+document.querySelectorAll("[data-auth]").forEach(b => b.onclick = (e) => {
+  e.preventDefault(); state.mode = b.dataset.auth; applyMode(); show("auth"); $("email").focus();
+});
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-notify]"); if (!b) return;
+  const msg = $("notifyMsg"); if (!msg) return;
+  msg.textContent = `The ${b.dataset.notify} build is in progress. Create an account now and you'll hear from us the day it ships.`;
+  msg.style.color = "var(--success)";
+});
+$("backSite").onclick = () => show("site");
+
+/* ---------- helpers ---------- */
+const pad = n => String(n).padStart(2,"0");
+const fmt = {
+  hm(sec){ sec = Math.max(0, Math.round(sec)); const h = Math.floor(sec/3600), m = Math.floor(sec%3600/60);
+    return h ? `${h}h ${m}m` : `${m}m`; },
+  hours(sec){ return (sec/3600).toFixed(1) + "h"; },
+  time(iso){ const d = new Date(iso); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; },
+  day(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; },
+  nice(dayStr){ const d = new Date(dayStr + "T12:00:00");
+    return d.toLocaleDateString("en-GB", {weekday:"short", day:"numeric", month:"short"}); },
+  ago(iso){ if (!iso) return "never"; const s = (Date.now() - new Date(iso))/1000;
+    if (s < 90) return "just now"; if (s < 3600) return `${Math.round(s/60)} min ago`;
+    if (s < 86400) return `${Math.round(s/3600)} h ago`; return `${Math.round(s/86400)} d ago`; },
+};
+function actColor(p){ return p >= 66 ? "var(--success)" : p >= 33 ? "var(--warn)" : "var(--danger)"; }
+const initials = u => (u.name || u.email || "?").slice(0,2).toUpperCase();
+const daysBack = n => { const out = []; for (let i = n-1; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate()-i); out.push(fmt.day(d)); } return out; };
+const userById = id => state.users.find(u => u.id === id);
+const userName = id => { const u = userById(id); return u ? (u.name || u.email) : "Unknown"; };
+const parseApps = m => { try { return JSON.parse(m.apps || "[]"); } catch { return []; } };
+const parseShots = m => { try { return JSON.parse(m.screenshots || "[]"); } catch { return []; } };
+const topApp = m => { const a = parseApps(m); return a.length ? a.reduce((x,y) => y.seconds > x.seconds ? y : x).name : null; };
+// Shift seconds that fall on a given day (open shifts count up to now).
+function shiftSecondsOn(shifts, day){
+  const lo = new Date(day + "T00:00:00"), hi = new Date(day + "T23:59:59.999");
+  return shifts.reduce((sum, s) => {
+    const a = new Date(s.start_at), b = s.end_at ? new Date(s.end_at) : new Date();
+    const start = a > lo ? a : lo, end = b < hi ? b : hi;
+    return sum + Math.max(0, (end - start)/1000);
+  }, 0);
+}
+
+async function api(path, opts={}) {
+  const res = await fetch(API + path, { ...opts, headers: {
+    "Content-Type":"application/json",
+    ...(state.token ? {Authorization:"Bearer "+state.token} : {}),
+    ...(opts.headers||{}) } });
+  const data = await res.json().catch(()=>({}));
+  if (res.status === 401 && state.token) { hardLogout(); throw new Error("Session expired — please log in again."); }
+  if (!res.ok) throw new Error(data.error || ("Error "+res.status));
+  return data;
+}
+// Screenshots need the auth header, so fetch as a blob and hand back an object URL (cached).
+const shotCache = new Map();
+async function shotURL(key, ownerId) {
+  if (!key) return null;
+  const ck = ownerId + "|" + key;
+  if (shotCache.has(ck)) return shotCache.get(ck);
+  const p = (async () => {
+    try {
+      const res = await fetch(`${API}/api/shot?key=${encodeURIComponent(key)}&user=${encodeURIComponent(ownerId||"")}`,
+        { headers:{Authorization:"Bearer "+state.token} });
+      return res.ok ? URL.createObjectURL(await res.blob()) : null;
+    } catch { return null; }
+  })();
+  shotCache.set(ck, p);
+  return p;
+}
+
+/* ---------- auth: login / register / verify / reset / resetConfirm ---------- */
+const authError = $("authError");
+let pendingEmail = "";
+const otpBoxes = Array.from(document.querySelectorAll("#otp input"));
+const otpCode = () => otpBoxes.map(b => b.value).join("");
+
+function pwStrength(pw){
+  const letter=/[a-zA-Z]/.test(pw), digit=/[0-9]/.test(pw), sym=/[^a-zA-Z0-9]/.test(pw);
+  if (pw.length < 8) return {ok:false, text:"Weak · at least 8 characters", color:"var(--danger)"};
+  if (!letter || !digit) return {ok:false, text:"Weak · mix letters and numbers", color:"var(--danger)"};
+  if (pw.length >= 12 && sym) return {ok:true, text:"Strong password", color:"var(--success)"};
+  return {ok:true, text:"Good password", color:"var(--warn)"};
+}
+
+// One digit per box: auto-advance, backspace steps back, paste spreads the code.
+otpBoxes.forEach((box, i) => {
+  box.addEventListener("input", () => {
+    const digits = box.value.replace(/\D/g,"");
+    if (digits.length > 1) {
+      digits.split("").forEach((d,k)=>{ if (otpBoxes[i+k]) otpBoxes[i+k].value = d; });
+      otpBoxes[Math.min(i+digits.length, otpBoxes.length-1)].focus();
+    } else {
+      box.value = digits;
+      if (digits && otpBoxes[i+1]) otpBoxes[i+1].focus();
+    }
+    if (otpCode().length === 6) doAuth();
+  });
+  box.addEventListener("keydown", e => {
+    if (e.key === "Backspace" && !box.value && otpBoxes[i-1]) { otpBoxes[i-1].value = ""; otpBoxes[i-1].focus(); }
+  });
+});
+
+function applyMode(){
+  const m = state.mode;
+  const copy = {
+    login:        ["Log in", "Welcome back. Sign in to your dashboard.", "Log in"],
+    register:     ["Create your account", "Use your work email — we'll send a 6-digit code to confirm it.", "Create account"],
+    verify:       ["Check your email", `We sent a 6-digit code to ${pendingEmail}. It expires in 15 minutes.`, "Verify"],
+    reset:        ["Reset your password", "Enter your email and we'll send you a reset code.", "Send code"],
+    resetConfirm: ["Set a new password", `Enter the code we sent to ${pendingEmail} and choose a new password.`, "Reset password"],
+  }[m];
+  $("authTitle").textContent = copy[0];
+  $("authSub").textContent = copy[1];
+  $("authBtn").textContent = copy[2];
+  $("email").style.display    = ["login","register","reset"].includes(m) ? "" : "none";
+  $("pwWrap").style.display   = ["login","register","resetConfirm"].includes(m) ? "" : "none";
+  $("strength").style.display = ["register","resetConfirm"].includes(m) ? "" : "none";
+  $("otp").style.display      = ["verify","resetConfirm"].includes(m) ? "flex" : "none";
+  $("forgotBtn").style.display = m === "login" ? "" : "none";
+  $("resendBtn").style.display = m === "verify" ? "" : "none";
+  $("toggleMode").textContent = m === "login" ? "Don't have an account? Create one" : "Already have an account? Log in";
+  $("password").placeholder = m === "resetConfirm" ? "New password" : "Password";
+  $("password").autocomplete = ["register","resetConfirm"].includes(m) ? "new-password" : "current-password";
+  authError.textContent = ""; $("strength").textContent = "";
+}
+
+$("toggleMode").onclick = () => { state.mode = state.mode === "login" ? "register" : "login"; applyMode(); };
+$("forgotBtn").onclick  = () => { state.mode = "reset"; applyMode(); };
+$("resendBtn").onclick  = async () => {
+  try {
+    await api("/api/resend-code", {method:"POST", body:JSON.stringify({email:pendingEmail})});
+    authError.style.color = "var(--success)"; authError.textContent = "New code sent.";
+  } catch(e) { authError.style.color = "var(--danger)"; authError.textContent = e.message; }
+};
+$("authBtn").onclick = doAuth;
+$("email").addEventListener("keydown", e => { if (e.key === "Enter") doAuth(); });
+$("password").addEventListener("keydown", e => { if (e.key === "Enter") doAuth(); });
+$("eye").onclick = () => {
+  const p = $("password"); p.type = p.type === "password" ? "text" : "password";
+  $("eye").textContent = p.type === "password" ? "👁" : "🙈";
+};
+$("password").addEventListener("input", () => {
+  if (!["register","resetConfirm"].includes(state.mode)) { $("strength").textContent = ""; return; }
+  const s = pwStrength($("password").value);
+  $("strength").textContent = $("password").value ? s.text : "";
+  $("strength").style.color = s.color;
+});
+
+function loginSuccess(data){
+  state.token = data.token; state.user = data.user;
+  store.set("tt_token", data.token);
+  store.set("tt_user", JSON.stringify(data.user));
+  otpBoxes.forEach(b => b.value = "");
+  $("password").value = "";
+  enterApp();
+}
+
+async function doAuth() {
+  const email = $("email").value.trim(), password = $("password").value, code = otpCode();
+  const m = state.mode;
+  authError.style.color = "var(--danger)";
+  if (["login","register","reset"].includes(m) && !email.includes("@"))
+    return void (authError.textContent = "Enter a valid email address.");
+  if (["register","resetConfirm"].includes(m)) {
+    const s = pwStrength(password);
+    if (!s.ok) return void (authError.textContent = s.text);
+  } else if (m === "login" && !password)
+    return void (authError.textContent = "Enter your password.");
+  if (["verify","resetConfirm"].includes(m) && code.length < 6)
+    return void (authError.textContent = "Enter the 6-digit code.");
+
+  authError.textContent = "";
+  $("authBtn").disabled = true;
+  try {
+    if (m === "login") {
+      loginSuccess(await api("/api/login", {method:"POST", body:JSON.stringify({email,password})}));
+    } else if (m === "register") {
+      const r = await api("/api/register", {method:"POST", body:JSON.stringify({email,password})});
+      if (r.pending) { pendingEmail = email; state.mode = "verify"; applyMode(); otpBoxes[0].focus(); }
+      else loginSuccess(r);
+    } else if (m === "verify") {
+      loginSuccess(await api("/api/verify", {method:"POST", body:JSON.stringify({email:pendingEmail, code})}));
+    } else if (m === "reset") {
+      await api("/api/request-reset", {method:"POST", body:JSON.stringify({email})});
+      pendingEmail = email; state.mode = "resetConfirm"; applyMode(); otpBoxes[0].focus();
+    } else if (m === "resetConfirm") {
+      loginSuccess(await api("/api/reset", {method:"POST", body:JSON.stringify({email:pendingEmail, code, password})}));
+    }
+  } catch(e) {
+    authError.textContent = e.message;
+    if (/verif/i.test(e.message || "")) { pendingEmail = email; state.mode = "verify"; applyMode(); }
+    otpBoxes.forEach(b => b.value = "");
+  } finally { $("authBtn").disabled = false; }
+}
+
+function hardLogout(){
+  state.token = null; state.user = null; state.users = [];
+  store.del("tt_token"); store.del("tt_user");
+  state.mode = "login"; applyMode(); show("site");
+}
+async function logout(){ try { await api("/api/logout", {method:"POST"}); } catch {} hardLogout(); }
+$("logoutBtn").onclick = logout;
+$("gateLogout").onclick = logout;
+$("gateSite").onclick = () => show("site");
+
+/* ---------- app shell ---------- */
+const PAGES = [
+  ["dashboard", "Dashboard", "▦"], ["activity", "Activity", "◫"], ["analytics", "Analytics", "◔"],
+  ["timesheets", "Timesheets", "☰"], ["warnings", "Warnings", "!"], ["members", "Members", "◉"],
+  ["download", "Download", "⤓"],
+];
+
+async function enterApp() {
+  // Refresh the profile so a role change (admin list edited) applies at once.
+  try { state.user = (await api("/api/me")).user; store.set("tt_user", JSON.stringify(state.user)); } catch {}
+  if (state.user.role !== "admin") { $("gateName").textContent = state.user.name || ""; show("gate"); return; }
+
+  show("app");
+  $("pName").textContent = state.user.name || state.user.email;
+  $("pRole").textContent = "Admin";
+  $("pAv").textContent = initials(state.user);
+
+  const nav = $("navItems"); nav.innerHTML = "";
+  PAGES.forEach(([id, label, ic]) => {
+    const b = document.createElement("button");
+    b.innerHTML = `<span class="ic">${ic}</span>${label}<span class="badge hidden" data-badge="${id}"></span>`;
+    b.dataset.id = id; b.onclick = () => { state.page = id; render(); };
+    nav.appendChild(b);
+  });
+  await loadUsers();
+  state.page = "dashboard";
+  render();
+  refreshWarningBadge();
+}
+async function loadUsers(){
+  try { state.users = (await api("/api/users")).users; } catch { state.users = [state.user]; }
+}
+async function refreshWarningBadge(){
+  try {
+    const { warnings } = await api("/api/range?user=all&from=" + fmt.day(new Date()) + "&to=" + fmt.day(new Date()));
+    const b = document.querySelector('[data-badge="warnings"]');
+    if (b) { b.textContent = warnings.length; b.classList.toggle("hidden", !warnings.length); }
+  } catch {}
+}
+
+/* ---------- topbar controls ---------- */
+function memberSelect(allowAll){
+  const opts = (allowAll ? [`<option value="all">Everyone</option>`] : []).concat(
+    state.users.map(u => `<option value="${u.id}">${esc(u.name || u.email)}</option>`));
+  const cur = (!allowAll && state.viewing === "all") ? (state.users[0] && state.users[0].id) : state.viewing;
+  if (!allowAll && state.viewing === "all") state.viewing = cur;
+  return `<select class="ctl" id="memberSel">${opts.join("")}</select>`;
+}
+function dayNav(){
+  const isToday = fmt.day(state.date) === fmt.day(new Date());
+  return `<button class="ctl" id="prevDay">‹</button><button class="ctl" id="nextDay" ${isToday ? "disabled" : ""}>›</button>
+    <span style="font-weight:600;font-size:14px;min-width:120px">${isToday ? "Today" : fmt.nice(fmt.day(state.date))}</span>
+    <button class="ctl" id="todayBtn">Today</button>`;
+}
+function periodSeg(){
+  return `<div class="seg">${[[1,"Today"],[7,"7 days"],[30,"30 days"]].map(([d,l]) =>
+    `<button data-period="${d}" class="${state.period===d ? "active" : ""}">${l}</button>`).join("")}</div>`;
+}
+function wireTopbar(){
+  const sel = $("memberSel"); if (sel) { sel.value = state.viewing; sel.onchange = () => { state.viewing = sel.value; render(); }; }
+  const p = $("prevDay"); if (p) p.onclick = () => { state.date.setDate(state.date.getDate()-1); render(); };
+  const n = $("nextDay"); if (n) n.onclick = () => { const d = new Date(state.date); d.setDate(d.getDate()+1); if (d <= new Date()) { state.date = d; render(); } };
+  const t = $("todayBtn"); if (t) t.onclick = () => { state.date = new Date(); render(); };
+  document.querySelectorAll("[data-period]").forEach(b => b.onclick = () => { state.period = +b.dataset.period; render(); });
+}
+
+function render() {
+  document.querySelectorAll("#navItems button").forEach(b => b.classList.toggle("active", b.dataset.id === state.page));
+  const title = PAGES.find(p => p[0] === state.page)[1];
+  let controls = "";
+  if (state.page === "activity") controls = memberSelect(false) + dayNav();
+  else if (state.page === "analytics" || state.page === "timesheets") controls = memberSelect(true) + periodSeg();
+  $("topbar").innerHTML = `<span class="title">${title}</span>${controls}<div style="flex:1"></div>
+    <button class="ctl" id="refreshBtn" title="Refresh">↻</button>`;
+  wireTopbar();
+  $("refreshBtn").onclick = () => { shotCache.clear(); loadUsers().then(render); };
+  const c = $("content");
+  ({ dashboard: renderDashboard, activity: renderActivity, analytics: renderAnalytics,
+     timesheets: renderTimesheets, warnings: renderWarnings, members: renderMembers, download: renderDownload })[state.page](c);
+}
+
+/* ---------- Dashboard ---------- */
+async function renderDashboard(c) {
+  const today = fmt.day(new Date());
+  c.innerHTML = `<h2 class="page">Team today</h2><div class="psub">${fmt.nice(today)} · live status, hours and the latest screenshot per member</div>
+    <div class="kpis" id="kpis">
+      <div class="card kpi"><div class="l">Working now</div><div class="v" id="kWorking">–</div><div class="s">of ${state.users.length} members</div></div>
+      <div class="card kpi"><div class="l">Hours today</div><div class="v" id="kHours">–</div><div class="s">across the team</div></div>
+      <div class="card kpi"><div class="l">Avg activity</div><div class="v" id="kAct">–</div><div class="s">tracked minutes today</div></div>
+      <div class="card kpi"><div class="l">Warnings today</div><div class="v" id="kWarn">–</div><div class="s">idle events</div></div>
+    </div>
+    <div class="members" id="members"></div>`;
+  const wrap = $("members");
+
+  state.users.forEach(u => {
+    const card = document.createElement("div");
+    card.className = "member card"; card.dataset.uid = u.id;
+    card.innerHTML = `
+      <div class="top">
+        <div class="av">${initials(u)}</div>
+        <div style="min-width:0"><div class="name">${esc(u.name || u.email)} ${u.role==="admin" ? '<span class="pill admin" style="font-size:10px;padding:1px 7px">Admin</span>' : ""}</div>
+          <div class="status" data-status style="color:var(--muted2)">${u.open_shifts ? "● Working now" : "○ Not clocked in"}</div></div>
+        <div style="margin-left:auto;color:var(--muted2);font-size:11.5px;white-space:nowrap">${u.last_seen ? "seen " + fmt.ago(u.last_seen) : ""}</div>
+      </div>
+      <div class="noshot" data-shot>No screenshot today</div>
+      <div class="stats">
+        <div class="stat"><div class="l">Worked</div><div class="v" data-worked>–</div></div>
+        <div class="stat"><div class="l">Activity</div><div class="v" data-act>–</div></div>
+        <div class="stat"><div class="l">Minutes</div><div class="v" data-min>–</div></div>
+      </div>
+      <button class="inspect">Inspect day</button>`;
+    card.querySelector("[data-status]").style.color = u.open_shifts ? "var(--success)" : "var(--muted2)";
+    card.querySelector(".inspect").onclick = () => { state.viewing = u.id; state.date = new Date(); state.page = "activity"; render(); };
+    wrap.appendChild(card);
+  });
+
+  // One range call covers the whole team for today.
+  let data; try { data = await api(`/api/range?user=all&from=${today}&to=${today}`); } catch(e) { c.insertAdjacentHTML("beforeend", `<div class="empty">${esc(e.message)}</div>`); return; }
+  const byUser = {};
+  state.users.forEach(u => byUser[u.id] = { mins: [], shifts: [] });
+  data.minutes.forEach(m => byUser[m.user_id] && byUser[m.user_id].mins.push(m));
+  data.shifts.forEach(s => byUser[s.user_id] && byUser[s.user_id].shifts.push(s));
+
+  let totalSec = 0, actSum = 0, actN = 0, working = 0;
+  state.users.forEach(u => {
+    const { mins, shifts } = byUser[u.id];
+    const card = wrap.querySelector(`[data-uid="${u.id}"]`);
+    const sec = shiftSecondsOn(shifts, today); totalSec += sec;
+    if (shifts.some(s => !s.end_at)) working++;
+    card.querySelector("[data-worked]").textContent = fmt.hm(sec);
+    card.querySelector("[data-min]").textContent = mins.length;
+    const avg = mins.length ? Math.round(mins.reduce((s,m)=>s+m.overall,0)/mins.length) : null;
+    if (avg != null) { actSum += avg * mins.length; actN += mins.length; }
+    const av = card.querySelector("[data-act]");
+    av.textContent = avg == null ? "–" : avg + "%"; if (avg != null) av.style.color = actColor(avg);
+  });
+  $("kWorking").textContent = working; $("kHours").textContent = fmt.hm(totalSec);
+  $("kAct").textContent = actN ? Math.round(actSum/actN) + "%" : "–";
+  $("kWarn").textContent = data.warnings.length;
+
+  // Latest screenshot per member needs the keys, which /api/range omits — fetch per member.
+  state.users.forEach(async u => {
+    const card = wrap.querySelector(`[data-uid="${u.id}"]`);
+    try {
+      const { minutes } = await api(`/api/minutes?user=${u.id}&date=${today}`);
+      const last = [...minutes].reverse().find(m => parseShots(m).length);
+      if (!last) return;
+      const url = await shotURL(parseShots(last)[0], u.id);
+      if (!url) return;
+      const img = document.createElement("img");
+      img.className = "shot"; img.src = url; img.title = fmt.time(last.ts);
+      img.onclick = () => openLightbox(minutes.filter(m => parseShots(m).length), minutes.indexOf(last), u);
+      card.querySelector("[data-shot]").replaceWith(img);
+    } catch {}
+  });
+}
+
+/* ---------- Activity (screenshots per hour, like the app) ---------- */
+async function renderActivity(c) {
+  const u = userById(state.viewing) || state.users[0];
+  if (!u) { c.innerHTML = `<div class="empty">No members yet.</div>`; return; }
+  const day = fmt.day(state.date);
+  c.innerHTML = `<h2 class="page">${esc(u.name || u.email)}</h2><div class="psub" id="asub">Loading…</div>
+    <div class="kpis" id="akpis"></div><div id="hours"></div>`;
+  let minutes = [], shifts = [];
+  try {
+    const [m, r] = await Promise.all([api(`/api/minutes?user=${u.id}&date=${day}`), api(`/api/range?user=${u.id}&from=${day}&to=${day}`)]);
+    minutes = m.minutes || []; shifts = r.shifts || [];
+  } catch(e) { $("asub").textContent = e.message; return; }
+
+  if (!minutes.length) { $("asub").textContent = `${fmt.nice(day)} · nothing tracked this day.`; $("akpis").remove(); return; }
+  const avg = Math.round(minutes.reduce((s,m)=>s+m.overall,0)/minutes.length);
+  const kb = Math.round(minutes.reduce((s,m)=>s+m.keyboard,0)/minutes.length);
+  const ms = Math.round(minutes.reduce((s,m)=>s+m.mouse,0)/minutes.length);
+  const apps = {}; minutes.forEach(m => parseApps(m).forEach(a => apps[a.name] = (apps[a.name]||0) + a.seconds));
+  const top = Object.entries(apps).sort((a,b)=>b[1]-a[1])[0];
+  $("asub").textContent = `${fmt.nice(day)} · ${minutes.length} tracked minutes · ${shifts.length} shift${shifts.length===1?"":"s"}`;
+  $("akpis").innerHTML = `
+    <div class="card kpi"><div class="l">Worked</div><div class="v">${fmt.hm(shiftSecondsOn(shifts, day))}</div><div class="s">from shifts</div></div>
+    <div class="card kpi"><div class="l">Activity</div><div class="v" style="color:${actColor(avg)}">${avg}%</div><div class="s">keyboard ${kb}% · mouse ${ms}%</div></div>
+    <div class="card kpi"><div class="l">Screenshots</div><div class="v">${minutes.filter(m=>parseShots(m).length).length}</div><div class="s">one every 10 minutes</div></div>
+    <div class="card kpi"><div class="l">Top app</div><div class="v" style="font-size:18px;margin-top:8px">${top ? esc(top[0]) : "–"}</div><div class="s">${top ? fmt.hm(top[1]) : ""}</div></div>`;
+
+  const withShots = minutes.filter(m => parseShots(m).length);
+  const byHour = {};
+  minutes.forEach(m => { const h = new Date(m.ts).getHours(); (byHour[h] = byHour[h] || []).push(m); });
+  const hours = $("hours");
+  Object.keys(byHour).sort((a,b)=>b-a).forEach(h => {
+    const list = byHour[h];
+    const hAvg = Math.round(list.reduce((s,m)=>s+m.overall,0)/list.length);
+    const head = document.createElement("div"); head.className = "hour-h";
+    head.innerHTML = `${pad(h)}:00 – ${pad(+h+1)}:00 <small>${list.length} min · ${hAvg}%</small>
+      <div class="hb"><span style="width:${hAvg}%;background:${actColor(hAvg)}"></span></div>`;
+    hours.appendChild(head);
+    const grid = document.createElement("div"); grid.className = "grid"; hours.appendChild(grid);
+    list.forEach(m => {
+      const key = parseShots(m)[0], app = topApp(m);
+      const card = document.createElement("div"); card.className = "shot";
+      card.innerHTML = `<div class="im">${key ? `<img alt=""><div class="zoom">🔍</div>` : `<div class="none">No screenshot</div>`}</div>
+        <div class="meta"><div style="display:flex;justify-content:space-between;font-weight:600"><span>${fmt.time(m.ts)}</span>
+          <span style="color:${actColor(m.overall)}">${m.overall}%</span></div>
+        <div class="bar"><span style="width:${m.overall}%;background:${actColor(m.overall)}"></span></div>
+        <div class="app" title="${esc(app||"")}">${app ? esc(app) : "<span style='color:var(--muted2)'>No app recorded</span>"}</div></div>`;
+      grid.appendChild(card);
+      if (key) {
+        card.querySelector(".im").onclick = () => openLightbox(withShots, withShots.indexOf(m), u);
+        shotURL(key, u.id).then(url => { if (url) card.querySelector("img").src = url; });
+      }
+    });
+  });
+}
+
+/* ---------- Analytics ---------- */
+async function renderAnalytics(c) {
+  const days = daysBack(state.period), from = days[0], to = days[days.length-1];
+  const who = state.viewing;
+  c.innerHTML = `<h2 class="page">Analytics</h2><div class="psub" id="ansub">Loading…</div><div id="an"></div>`;
+  let d; try { d = await api(`/api/range?user=${who}&from=${from}&to=${to}`); } catch(e) { $("ansub").textContent = e.message; return; }
+  const users = who === "all" ? state.users : [userById(who)].filter(Boolean);
+  const label = who === "all" ? "Everyone" : userName(who);
+  $("ansub").textContent = `${label} · ${state.period === 1 ? fmt.nice(to) : fmt.nice(from) + " – " + fmt.nice(to)}`;
+
+  const mins = d.minutes, shifts = d.shifts, warns = d.warnings;
+  const worked = users.reduce((sum, u) => sum + days.reduce((s, day) => s + shiftSecondsOn(shifts.filter(x=>x.user_id===u.id), day), 0), 0);
+  const avg = mins.length ? Math.round(mins.reduce((s,m)=>s+m.overall,0)/mins.length) : null;
+  const workingNow = new Set(shifts.filter(s => !s.end_at).map(s => s.user_id)).size;
+
+  // Daily series
+  const perDay = days.map(day => {
+    const dm = mins.filter(m => m.ts.slice(0,10) === day);
+    const sec = users.reduce((s,u) => s + shiftSecondsOn(shifts.filter(x=>x.user_id===u.id), day), 0);
+    return { day, sec, minutes: dm.length, act: dm.length ? Math.round(dm.reduce((s,m)=>s+m.overall,0)/dm.length) : null };
+  });
+  // Hourly
+  const hc = {}, hs = {};
+  mins.forEach(m => { const h = new Date(m.ts).getHours(); hc[h] = (hc[h]||0)+1; hs[h] = (hs[h]||0)+m.overall; });
+  const hourly = Object.keys(hc).map(Number).sort((a,b)=>a-b).map(h => ({ h, n: hc[h], act: Math.round(hs[h]/hc[h]) }));
+  // Classification
+  const cls = { core:0, light:0, idle:0 };
+  mins.forEach(m => { if (m.overall >= 66) cls.core++; else if (m.overall >= 33) cls.light++; else cls.idle++; });
+  // Top apps
+  const apps = {}; mins.forEach(m => parseApps(m).forEach(a => apps[a.name] = (apps[a.name]||0) + a.seconds));
+  const topApps = Object.entries(apps).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  // Per person
+  const people = users.map(u => {
+    const um = mins.filter(m => m.user_id === u.id);
+    return { u, worked: days.reduce((s, day) => s + shiftSecondsOn(shifts.filter(x=>x.user_id===u.id), day), 0),
+      act: um.length ? Math.round(um.reduce((s,m)=>s+m.overall,0)/um.length) : null,
+      warns: warns.filter(w => w.user_id === u.id).length, now: shifts.some(s => s.user_id===u.id && !s.end_at),
+      spark: days.slice(-7).map(day => { const x = um.filter(m => m.ts.slice(0,10)===day); return x.length ? Math.round(x.reduce((s,m)=>s+m.overall,0)/x.length) : 0; }) };
+  }).sort((a,b) => b.worked - a.worked);
+
+  $("an").innerHTML = `
+    <div class="kpis">
+      <div class="card kpi"><div class="l">Total worked</div><div class="v">${fmt.hm(worked)}</div><div class="s">${mins.length} tracked minutes</div></div>
+      <div class="card kpi"><div class="l">Avg activity</div><div class="v" style="color:${avg==null?"inherit":actColor(avg)}">${avg==null?"–":avg+"%"}</div><div class="s">keyboard + mouse</div></div>
+      <div class="card kpi"><div class="l">Warnings</div><div class="v">${warns.length}</div><div class="s">idle events in period</div></div>
+      <div class="card kpi"><div class="l">Working now</div><div class="v">${workingNow}</div><div class="s">open shifts</div></div>
+    </div>
+    <div class="two">
+      <div class="card"><h4>Hours per day</h4>${barChart(perDay.map(p => ({ l: state.period > 7 ? p.day.slice(8) : fmt.nice(p.day).split(" ")[0], v: p.sec/3600, c: p.act })), v => v.toFixed(1)+"h")}</div>
+      <div class="card"><h4>Time classification</h4>${ring(cls)}</div>
+    </div>
+    <div class="two">
+      <div class="card"><h4>Activity by hour of day</h4>${hourly.length ? barChart(hourly.map(x => ({ l: pad(x.h), v: x.act, c: x.act })), v => v+"%", 100) : '<div class="empty">No tracked minutes.</div>'}</div>
+      <div class="card"><h4>Top apps</h4>${topApps.length ? `<div class="bars">${topApps.map(([n,s]) => `<div class="r"><span class="n" title="${esc(n)}">${esc(n)}</span><div class="b"><span style="width:${Math.round(s/topApps[0][1]*100)}%"></span></div><span class="v">${fmt.hm(s)}</span></div>`).join("")}</div>` : '<div class="empty">No app data.</div>'}</div>
+    </div>
+    <div class="card"><h4>Per member</h4>
+      <table><thead><tr><th>Member</th><th>Status</th><th>Worked</th><th>Activity</th><th>Last 7 days</th><th>Warnings</th></tr></thead>
+      <tbody>${people.map(p => `<tr class="click" data-uid="${p.u.id}">
+        <td><div style="display:flex;align-items:center;gap:10px"><div class="av" style="width:28px;height:28px;font-size:11px">${initials(p.u)}</div><b>${esc(p.u.name||p.u.email)}</b></div></td>
+        <td>${p.now ? '<span class="pill ok">Working</span>' : '<span class="pill member">Offline</span>'}</td>
+        <td>${fmt.hm(p.worked)}</td>
+        <td style="color:${p.act==null?"var(--muted2)":actColor(p.act)};font-weight:600">${p.act==null?"–":p.act+"%"}</td>
+        <td>${sparkline(p.spark)}</td>
+        <td>${p.warns ? `<span class="pill warn">${p.warns}</span>` : '<span style="color:var(--muted2)">0</span>'}</td></tr>`).join("")}</tbody></table></div>`;
+  $("an").querySelectorAll("tr.click").forEach(tr => tr.onclick = () => { state.viewing = tr.dataset.uid; state.date = new Date(); state.page = "activity"; render(); });
+}
+
+function barChart(items, fmtV, max) {
+  if (!items.length) return '<div class="empty">No data.</div>';
+  const W = 600, H = 170, padL = 6, padB = 22, top = 16;
+  const m = max || Math.max(...items.map(i => i.v), 0.1);
+  const bw = (W - padL*2) / items.length, gap = Math.min(10, bw*0.25);
+  const bars = items.map((it, i) => {
+    const h = Math.max(it.v > 0 ? 3 : 0, (it.v / m) * (H - padB - top));
+    const x = padL + i*bw + gap/2, y = H - padB - h;
+    const color = it.c == null ? "url(#g)" : actColor(it.c);
+    return `<rect x="${x}" y="${y}" width="${bw-gap}" height="${h}" rx="4" fill="${color}"><title>${fmtV(it.v)}</title></rect>
+      ${it.v > 0 ? `<text x="${x + (bw-gap)/2}" y="${y-5}" text-anchor="middle">${fmtV(it.v)}</text>` : ""}
+      ${(items.length <= 16 || i % Math.ceil(items.length/12) === 0) ? `<text x="${x + (bw-gap)/2}" y="${H-6}" text-anchor="middle">${it.l}</text>` : ""}`;
+  }).join("");
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none" style="display:block">
+    <defs><linearGradient id="g" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#4f7dff"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs>
+    <line x1="0" x2="${W}" y1="${H-padB}" y2="${H-padB}" stroke="rgba(255,255,255,.08)"/>${bars}</svg>`;
+}
+function ring(cls) {
+  const total = cls.core + cls.light + cls.idle;
+  if (!total) return '<div class="empty">No tracked minutes.</div>';
+  const R = 52, C = 2*Math.PI*R; let off = 0;
+  const seg = (n, color) => { const len = C * n/total; const s = `<circle r="${R}" cx="70" cy="70" fill="none" stroke="${color}" stroke-width="16" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 70 70)"/>`; off += len; return s; };
+  const pct = n => Math.round(n/total*100);
+  return `<div style="display:flex;align-items:center;gap:18px">
+    <svg viewBox="0 0 140 140" width="140" height="140">${seg(cls.core,"var(--success)")}${seg(cls.light,"var(--warn)")}${seg(cls.idle,"var(--danger)")}
+      <text x="70" y="66" text-anchor="middle" style="fill:var(--text);font-size:22px;font-weight:700">${pct(cls.core)}%</text>
+      <text x="70" y="84" text-anchor="middle" style="fill:var(--muted2);font-size:10px">focused</text></svg>
+    <div class="legend" style="flex-direction:column;gap:8px;margin:0">
+      <span><i style="background:var(--success)"></i>Focused ≥66% · ${cls.core} min (${pct(cls.core)}%)</span>
+      <span><i style="background:var(--warn)"></i>Light 33–65% · ${cls.light} min (${pct(cls.light)}%)</span>
+      <span><i style="background:var(--danger)"></i>Idle &lt;33% · ${cls.idle} min (${pct(cls.idle)}%)</span></div></div>`;
+}
+function sparkline(vals) {
+  const W = 90, H = 24, n = vals.length;
+  const pts = vals.map((v,i) => `${(i/(n-1))*W},${H - (v/100)*(H-2) - 1}`).join(" ");
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}"><polyline points="${pts}" fill="none" stroke="#4f7dff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+}
+
+/* ---------- Timesheets ---------- */
+async function renderTimesheets(c) {
+  const days = daysBack(state.period), from = days[0], to = days[days.length-1];
+  c.innerHTML = `<h2 class="page">Timesheets</h2><div class="psub" id="tsub">Loading…</div><div id="ts"></div>`;
+  let d; try { d = await api(`/api/range?user=${state.viewing}&from=${from}&to=${to}`); } catch(e) { $("tsub").textContent = e.message; return; }
+  const users = state.viewing === "all" ? state.users : [userById(state.viewing)].filter(Boolean);
+  const total = users.reduce((s,u) => s + days.reduce((x, day) => x + shiftSecondsOn(d.shifts.filter(v=>v.user_id===u.id), day), 0), 0);
+  $("tsub").textContent = `${state.viewing === "all" ? "Everyone" : userName(state.viewing)} · ${fmt.nice(from)} – ${fmt.nice(to)} · ${fmt.hm(total)} total`;
+  const byDay = {};
+  d.shifts.forEach(s => { const day = s.start_at.slice(0,10); (byDay[day] = byDay[day] || []).push(s); });
+  const keys = Object.keys(byDay).sort().reverse();
+  if (!keys.length) { $("ts").innerHTML = '<div class="empty">No shifts in this period.</div>'; return; }
+  $("ts").innerHTML = keys.map(day => {
+    const rows = byDay[day].sort((a,b) => a.start_at < b.start_at ? -1 : 1);
+    const daySec = rows.reduce((s,r) => s + ((r.end_at ? new Date(r.end_at) : new Date()) - new Date(r.start_at))/1000, 0);
+    return `<div class="card" style="margin-bottom:12px"><h4 style="display:flex;justify-content:space-between"><span>${fmt.nice(day)}</span><span>${fmt.hm(daySec)}</span></h4>
+      <table><thead><tr><th>Member</th><th>Clock in</th><th>Clock out</th><th>Duration</th><th>Activity</th></tr></thead><tbody>
+      ${rows.map(r => { const um = d.minutes.filter(m => m.user_id===r.user_id && m.ts >= r.start_at && (!r.end_at || m.ts <= r.end_at));
+        const act = um.length ? Math.round(um.reduce((s,m)=>s+m.overall,0)/um.length) : null;
+        const dur = ((r.end_at ? new Date(r.end_at) : new Date()) - new Date(r.start_at))/1000;
+        return `<tr class="click" data-uid="${r.user_id}" data-day="${day}"><td><b>${esc(userName(r.user_id))}</b></td><td>${fmt.time(r.start_at)}</td>
+          <td>${r.end_at ? fmt.time(r.end_at) : '<span class="pill ok">Running</span>'}</td><td>${fmt.hm(dur)}</td>
+          <td style="color:${act==null?"var(--muted2)":actColor(act)};font-weight:600">${act==null?"–":act+"%"}</td></tr>`; }).join("")}
+      </tbody></table></div>`;
+  }).join("");
+  $("ts").querySelectorAll("tr.click").forEach(tr => tr.onclick = () => { state.viewing = tr.dataset.uid; state.date = new Date(tr.dataset.day + "T12:00:00"); state.page = "activity"; render(); });
+}
+
+/* ---------- Warnings ---------- */
+async function renderWarnings(c) {
+  c.innerHTML = `<h2 class="page">Warnings</h2><div class="psub" id="wsub">Loading…</div><div id="wlist"></div>`;
+  let warns = [];
+  try { warns = (await api("/api/warnings")).warnings || []; } catch(e) { $("wsub").textContent = e.message; return; }
+  $("wsub").textContent = warns.length ? `${warns.length} idle events · newest first` : "No warnings — nobody has gone idle.";
+  const list = $("wlist");
+  warns.forEach(w => {
+    const resumed = w.outcome === "resumed";
+    const color = w.outcome ? (resumed ? "var(--success)" : "var(--danger)") : "var(--warn)";
+    const card = document.createElement("div"); card.className = "card warn-card";
+    card.innerHTML = `<div class="stripe" style="background:${color}"></div>
+      <img alt="" style="${w.screenshot ? "" : "display:none"}">
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:10px"><b style="font-size:15px">${esc(w.user_name)}</b>
+          <span class="pill ${w.outcome ? (resumed ? "ok" : "bad") : "warn"}">${w.outcome ? (resumed ? "Went back to work" : "Clocked out") : "Awaiting response"}</span></div>
+        <div style="color:var(--muted2);font-size:12.5px;margin-top:6px">Idle from ${fmt.time(w.started_at)} · ${fmt.nice(w.started_at.slice(0,10))}${w.resolved_at ? " · answered " + fmt.time(w.resolved_at) : ""}</div>
+        <div style="color:var(--muted2);font-size:12.5px">Activity ${w.activity}%${w.app ? " · " + esc(w.app) : ""}</div>
+      </div>
+      <button class="inspect" style="width:auto;align-self:center">Open day</button>`;
+    card.querySelector(".inspect").onclick = () => { state.viewing = w.user_id; state.date = new Date(w.started_at); state.page = "activity"; render(); };
+    list.appendChild(card);
+    if (w.screenshot) shotURL(w.screenshot, w.user_id).then(u => {
+      if (!u) return; const img = card.querySelector("img"); img.src = u;
+      img.onclick = () => openLightbox([{ ts: w.started_at, overall: w.activity, screenshots: JSON.stringify([w.screenshot]), apps: JSON.stringify(w.app ? [{name:w.app, seconds:60}] : []) }], 0, { id: w.user_id, name: w.user_name });
+    });
+  });
+}
+
+/* ---------- Members ---------- */
+function renderMembers(c) {
+  const admins = state.users.filter(u => u.role === "admin").length;
+  c.innerHTML = `<h2 class="page">Members</h2><div class="psub">${state.users.length} accounts · ${admins} admin${admins===1?"":"s"} · admins are set in the server config (ADMIN_EMAILS)</div>
+    <div class="card"><table><thead><tr><th>Member</th><th>Email</th><th>Role</th><th>Status</th><th>Last seen</th><th>Joined</th></tr></thead><tbody>
+    ${state.users.map(u => `<tr class="click" data-uid="${u.id}">
+      <td><div style="display:flex;align-items:center;gap:10px"><div class="av" style="width:28px;height:28px;font-size:11px">${initials(u)}</div><b>${esc(u.name||"")}</b></div></td>
+      <td style="color:var(--muted)">${esc(u.email)}</td>
+      <td><span class="pill ${u.role==="admin"?"admin":"member"}">${u.role==="admin"?"Admin":"Member"}</span></td>
+      <td>${u.open_shifts ? '<span class="pill ok">Working now</span>' : (u.verified === 0 ? '<span class="pill warn">Unverified</span>' : '<span class="pill member">Offline</span>')}</td>
+      <td style="color:var(--muted)">${fmt.ago(u.last_seen)}</td>
+      <td style="color:var(--muted)">${(u.created_at||"").slice(0,10)}</td></tr>`).join("")}
+    </tbody></table></div>
+    <p style="color:var(--muted2);font-size:12.5px;margin-top:14px">Members track time in the desktop app. Only admins can sign in here.</p>`;
+  c.querySelectorAll("tr.click").forEach(tr => tr.onclick = () => { state.viewing = tr.dataset.uid; state.date = new Date(); state.page = "activity"; render(); });
+}
+
+/* ---------- Download (inside the app) ---------- */
+function renderDownload(c) {
+  c.innerHTML = `<h2 class="page">Download the app</h2>
+    <div class="psub">Send this to your team — the desktop app is where time gets tracked.</div>
+    <div class="plats" style="margin:0">${platformCards(true)}</div>
+    <p style="color:var(--muted2);font-size:12.5px;margin-top:16px" id="notifyMsg"></p>`;
+}
+
+/* ---------- Lightbox (Drive-style: arrows, keys, info) ---------- */
+const lb = { items: [], i: 0, owner: null };
+function openLightbox(items, index, owner){
+  lb.items = items; lb.i = Math.max(0, index); lb.owner = owner;
+  $("lightbox").classList.add("show"); showLb();
+}
+async function showLb(){
+  const m = lb.items[lb.i]; if (!m) return;
+  const key = parseShots(m)[0], app = topApp(m);
+  $("lbInfo").innerHTML = `<b>${esc(lb.owner.name || lb.owner.email || "")}</b> · ${fmt.nice(m.ts.slice(0,10))} at <b>${fmt.time(m.ts)}</b> · ${lb.i+1} / ${lb.items.length}`;
+  $("lbBot").innerHTML = `<span class="act">Activity <i><span style="width:${m.overall}%;background:${actColor(m.overall)}"></span></i> <b style="color:${actColor(m.overall)}">${m.overall}%</b></span>
+    ${m.keyboard != null ? `<span>Keyboard ${m.keyboard}%</span><span>Mouse ${m.mouse}%</span>` : ""}
+    <span>${app ? "App: <b style='color:var(--text)'>" + esc(app) + "</b>" : "No app recorded"}</span>`;
+  $("lbPrev").style.visibility = lb.i > 0 ? "visible" : "hidden";
+  $("lbNext").style.visibility = lb.i < lb.items.length-1 ? "visible" : "hidden";
+  const img = $("lbImg"); img.style.opacity = .4;
+  const url = await shotURL(key, lb.owner.id); if (url) img.src = url; img.style.opacity = 1;
+  // Warm the neighbours.
+  [lb.i-1, lb.i+1].forEach(j => lb.items[j] && shotURL(parseShots(lb.items[j])[0], lb.owner.id));
+}
+$("lbClose").onclick = () => $("lightbox").classList.remove("show");
+$("lbPrev").onclick = e => { e.stopPropagation(); if (lb.i > 0) { lb.i--; showLb(); } };
+$("lbNext").onclick = e => { e.stopPropagation(); if (lb.i < lb.items.length-1) { lb.i++; showLb(); } };
+$("lightbox").onclick = e => { if (e.target.id === "lightbox" || e.target.classList.contains("lb-mid")) $("lightbox").classList.remove("show"); };
+document.addEventListener("keydown", e => {
+  if (!$("lightbox").classList.contains("show")) return;
+  if (e.key === "Escape") $("lightbox").classList.remove("show");
+  if (e.key === "ArrowLeft") $("lbPrev").click();
+  if (e.key === "ArrowRight") $("lbNext").click();
+});
+
+/* ---------- boot ---------- */
+applyMode();
+if (state.token && state.user) enterApp(); else show("site");
+</script>
+</body>
+</html>
