@@ -201,6 +201,15 @@
     border: 1px solid var(--border); color: var(--muted); font-size: 12.5px; line-height: 1.5; }
 
   /* ---------------- member gate ---------------- */
+  .modal-overlay { display: none; position: fixed; inset: 0; z-index: 50; background: rgba(2,3,8,.72);
+    backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 20px; }
+  .modal-overlay.show { display: flex; }
+  .modal-box { width: 100%; max-width: 360px; background: var(--card); border: 1px solid var(--border2);
+    border-radius: 16px; padding: 24px; }
+  .modal-box h3 { font-size: 17px; margin-bottom: 6px; }
+  .modal-sub { color: var(--muted); font-size: 12.5px; line-height: 1.5; margin-bottom: 16px; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+
   #gate { display: none; min-height: 100vh; place-items: center; padding: 40px 20px; text-align: center; }
   #gate.show { display: grid; }
   #gate .box { max-width: 520px; }
@@ -548,11 +557,27 @@
       <div class="av" id="pAv">—</div>
       <div><div class="nm" id="pName">—</div><small id="pRole">—</small></div>
     </div>
+    <button class="link" id="changePwBtn" style="text-align:left;padding:8px 6px">Change password</button>
     <button class="link" id="logoutBtn" style="text-align:left;padding:8px 6px">Log out</button>
   </aside>
   <div class="main">
     <div class="topbar" id="topbar"></div>
     <div class="content" id="content"></div>
+  </div>
+</div>
+
+<div id="pwModal" class="modal-overlay">
+  <div class="modal-box">
+    <h3>Change password</h3>
+    <p class="modal-sub">You'll stay signed in here — other devices will need the new password next time.</p>
+    <input class="field" id="pwCurrent" type="password" placeholder="Current password" autocomplete="current-password">
+    <input class="field" id="pwNew" type="password" placeholder="New password" autocomplete="new-password">
+    <div id="pwStrength" class="strength"></div>
+    <div class="err" id="pwErr"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="pwCancel">Cancel</button>
+      <button class="btn grad" id="pwSave">Save password</button>
+    </div>
   </div>
 </div>
 
@@ -844,6 +869,38 @@ async function logout(){ try { await api("/api/logout", {method:"POST"}); } catc
 $("logoutBtn").onclick = logout;
 $("gateLogout").onclick = logout;
 $("gateSite").onclick = () => show("site");
+
+/* ---------- change password (signed-in users) ---------- */
+const pwCurrent = $("pwCurrent"), pwNew = $("pwNew"), pwErr = $("pwErr"), pwStrengthEl = $("pwStrength");
+function openPwModal(){
+  pwCurrent.value = ""; pwNew.value = ""; pwErr.textContent = ""; pwStrengthEl.textContent = "";
+  $("pwModal").classList.add("show");
+  pwCurrent.focus();
+}
+function closePwModal(){ $("pwModal").classList.remove("show"); }
+$("changePwBtn").onclick = openPwModal;
+$("pwCancel").onclick = closePwModal;
+pwNew.addEventListener("input", () => {
+  if (!pwNew.value) { pwStrengthEl.textContent = ""; return; }
+  const s = pwStrength(pwNew.value);
+  pwStrengthEl.textContent = s.text; pwStrengthEl.style.color = s.color;
+});
+async function savePassword(){
+  pwErr.textContent = "";
+  if (!pwCurrent.value) return pwErr.textContent = "Enter your current password.";
+  const s = pwStrength(pwNew.value);
+  if (!s.ok) return pwErr.textContent = s.text;
+  $("pwSave").disabled = true;
+  try {
+    await api("/api/change-password", {method:"POST",
+      body: JSON.stringify({ currentPassword: pwCurrent.value, newPassword: pwNew.value })});
+    closePwModal();
+  } catch(e) {
+    pwErr.textContent = e.message;
+  } finally { $("pwSave").disabled = false; }
+}
+$("pwSave").onclick = savePassword;
+[pwCurrent, pwNew].forEach(f => f.addEventListener("keydown", e => { if (e.key === "Enter") savePassword(); }));
 
 /* ---------- app shell ---------- */
 const PAGES = [

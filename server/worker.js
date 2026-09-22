@@ -109,6 +109,7 @@ export default {
 
       if (path === "/api/me") return json({ user });
       if (path === "/api/logout" && request.method === "POST") return logout(request, env);
+      if (path === "/api/change-password" && request.method === "POST") return changePassword(request, env, user);
       if (path === "/api/shifts" && request.method === "POST") return saveShifts(request, env, user);
       if (path === "/api/minutes" && request.method === "POST") return saveMinutes(request, env, user);
       if (path === "/api/warnings" && request.method === "POST") return saveWarning(request, env, user);
@@ -308,6 +309,20 @@ async function issueSession(env, user) {
 async function logout(request, env) {
   const t = (request.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
   await env.DB.prepare("DELETE FROM sessions WHERE token = ?").bind(t).run();
+  return json({ ok: true });
+}
+
+/// Lets a signed-in user set their own new password, given the current one.
+/// Doesn't touch other sessions — logging in elsewhere still needs the new password,
+/// but existing tokens (including this one) stay valid until they expire or log out.
+async function changePassword(request, env, user) {
+  const { currentPassword, newPassword } = await request.json();
+  if (!newPassword || newPassword.length < 8) return err("New password must be at least 8 characters");
+  const row = await env.DB.prepare("SELECT password FROM users WHERE id = ?").bind(user.id).first();
+  if (!row || !(await verifyPassword(currentPassword || "", row.password)))
+    return err("Current password is wrong", 401);
+  const hash = await hashPassword(newPassword);
+  await env.DB.prepare("UPDATE users SET password = ? WHERE id = ?").bind(hash, user.id).run();
   return json({ ok: true });
 }
 
