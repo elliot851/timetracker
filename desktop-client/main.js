@@ -10,6 +10,15 @@ const path = require("path");
 const fs = require("fs");
 const { execFile } = require("child_process");
 
+// Windows: en riktig, ren install av TimeTracker-Setup.exe gav ett helt SVART fönster —
+// ready-to-show sköt igång, men renderer/index.html målades aldrig upp, bara BrowserWindows
+// egen backgroundColor syntes. Klassiskt tecken på att Electrons GPU-process/kompositor
+// faller på det här Windows-läget (vanligt på vissa grafikdrivrutiner, i RDP/VM). Programvaru-
+// rendering löser det på bekostnad av lite GPU-prestanda, obetydligt för en 420×620-popup.
+// Måste sättas FÖRE app.whenReady(). Verifierat 2026-09-23: svart fönster -> riktig UI efter
+// den här raden, på samma installation.
+if (process.platform === "win32") app.disableHardwareAcceleration();
+
 const API = "https://timetracker-api.elliot-897.workers.dev";
 const WEBSITE = "https://timetracker-web.elliot-897.workers.dev";
 const SCREENSHOT_EVERY_MIN = 10;   // one screenshot per N minutes (first minute always)

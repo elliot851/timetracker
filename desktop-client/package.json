@@ -1,7 +1,7 @@
 {
   "name": "timetracker-desktop",
   "productName": "TimeTracker",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "TimeTracker desktop client — clock in, screenshots, activity and app usage.",
   "main": "main.js",
   "author": "Creative Loop",

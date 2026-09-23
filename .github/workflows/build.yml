@@ -43,8 +43,8 @@ jobs:
         with:
           name: TimeTracker-${{ matrix.os }}
           path: |
-            desktop/dist/*.exe
-            desktop/dist/*.AppImage
-            desktop/dist/*.deb
-            desktop/dist/*.dmg
+            desktop-client/dist/*.exe
+            desktop-client/dist/*.AppImage
+            desktop-client/dist/*.deb
+            desktop-client/dist/*.dmg
           if-no-files-found: ignore
