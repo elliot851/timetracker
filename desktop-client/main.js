@@ -219,7 +219,7 @@ const idleWarning = {
 
 // ---------- window & tray ----------
 let win = null, tray = null;
-const iconPath = path.join(__dirname, "build", "icon.png");
+const iconPath = path.join(__dirname, "assets", "icon.png");
 
 function createWindow() {
   win = new BrowserWindow({

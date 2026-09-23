@@ -1,7 +1,7 @@
 {
   "name": "timetracker-desktop",
   "productName": "TimeTracker",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "TimeTracker desktop client — clock in, screenshots, activity and app usage.",
   "main": "main.js",
   "author": "Creative Loop",
@@ -23,14 +23,14 @@
     "appId": "co.creativeloop.timetracker",
     "productName": "TimeTracker",
     "directories": { "buildResources": "build", "output": "dist" },
-    "files": ["main.js", "preload.js", "renderer/**", "build/icon.png"],
-    "win": { "target": ["nsis", "portable"], "icon": "build/icon.png" },
+    "files": ["main.js", "preload.js", "renderer/**", "assets/icon.png"],
+    "win": { "target": ["nsis", "portable"], "icon": "assets/icon.png" },
     "nsis": { "oneClick": true, "perMachine": false, "artifactName": "TimeTracker-Setup.${ext}", "shortcutName": "TimeTracker" },
     "portable": { "artifactName": "TimeTracker-Portable.${ext}" },
-    "linux": { "target": ["AppImage", "deb"], "icon": "build/icon.png", "category": "Utility", "maintainer": "Creative Loop" },
+    "linux": { "target": ["AppImage", "deb"], "icon": "assets/icon.png", "category": "Utility", "maintainer": "Creative Loop" },
     "appImage": { "artifactName": "TimeTracker.${ext}" },
     "deb": { "artifactName": "TimeTracker.${ext}" },
-    "mac": { "target": ["dmg"], "icon": "build/icon.png", "category": "public.app-category.productivity" },
+    "mac": { "target": ["dmg"], "icon": "assets/icon.png", "category": "public.app-category.productivity" },
     "dmg": { "artifactName": "TimeTracker.${ext}" },
     "publish": { "provider": "github", "owner": "elliot851", "repo": "timetracker", "releaseType": "release" }
   }
